@@ -4,8 +4,6 @@
 import rocknetmanager.tools as nt
 
 
-
-
 def main():
     mateo_root = Path("D:/1.ToSaver/profileimages/Matteo_database")
     images_path = mateo_root / Path("Site_A/images")

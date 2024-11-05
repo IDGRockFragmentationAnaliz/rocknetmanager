@@ -21,29 +21,15 @@ def geotif2geotif_standart(input_path: Path, output_folder: Path):
 			dst.write(image)
 
 
-mateo_root = Path("D:/1.ToSaver/profileimages/Matteo_database")
-images_path = mateo_root / Path("Site_A/images")
-path_images = [path for path in images_path.iterdir()]
-
-
-def main():
-	path_to_save = Path("D:/1.ToSaver/profileimages/Matteo_database/Site_A/Images_uint8")
-	for path in path_images:
-		geotif2geotif_standart(path, path_to_save)
-
-
-# image = cv2.imread(path_image, cv2.IMREAD_UNCHANGED)
-# print("Загрузка заверешена")
-#
-# image = np.uint8(image/np.max(image)*255)[:, :, 0:3]
-#
-# fig = plt.figure(figsize=(7, 9))
-# axs = [fig.add_subplot(1, 1, 1)]
-# axs[0].imshow(image[:, :, 0:3])
-# plt.show()
-#
-# cv2.imwrite("test.png", image)
-
-
-if __name__ == '__main__':
-	main()
+def mosaic_merge(images_folder: Path, save_path='mosaic.tif'):
+	path_images = [path for path in images_folder.iterdir()]
+	geo_images = [rasterio.open(f) for f in path_images]
+	mosaic, out_trans = merge(geo_images)
+	out_meta = geo_images[0].meta.copy()
+	out_meta.update({
+		"height": mosaic.shape[1],
+		"width": mosaic.shape[2],
+		"transform": out_trans
+	})
+	with rasterio.open(save_path, 'w', **out_meta) as dest:
+		dest.write(mosaic)
