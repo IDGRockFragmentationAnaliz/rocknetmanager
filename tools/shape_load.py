@@ -7,7 +7,7 @@ import shapefile
 from typing import List
 
 
-def shape_lines_save(path: Path):
+def shape_lines_load(path: Path):
 	with shapefile.Reader(path) as shp:
 		shapes = shp.shapes()
 		bbox = np.array(shp.bbox, np.float32)
