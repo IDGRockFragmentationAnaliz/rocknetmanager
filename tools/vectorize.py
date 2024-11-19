@@ -4,6 +4,13 @@ import sknw
 from pathlib import Path
 from shapely.geometry import LineString
 import shapefile
+from skimage import morphology
+import networkx as nx
+import skan
+import scipy
+import tqdm
+import matplotlib.pyplot as plt
+import pickle
 
 
 def shpline_save(path: Path, polylines):
@@ -25,7 +32,6 @@ def graph_to_lines(graph):
 		poly = poly.coords
 		poly = np.fliplr(np.array(poly))
 		polylines.append(poly)
-
 	return polylines
 
 
@@ -66,10 +72,32 @@ def filer_corners(image_thin):
 	return image_thin
 
 
-def vectorize(image_thin, save_folder: Path):
+def vectorize2(image_thin, save_folder: Path):
 	image_thin = cv2.ximgproc.thinning(image_thin)
 	image_thin = filer_corners(image_thin)
-	graph = sknw.build_sknw(image_thin, multi=True)
+	#skeleton = morphology.skeletonize(image_thin)
+	graph, coordinates = skeleton_to_csgraph(image_thin)
+	graph = sknw.build_sknw(image_thin[0:2**12, 0:2**12], multi=True)
 	polylines = graph_to_lines(graph)
-	shpline_save(save_folder, polylines)
-	return polylines
+	#shpline_save(save_folder, polylines)
+	exit()
+	#return polylines
+
+
+def vectorize(image_thin, save_folder: Path):
+	image_thin = cv2.dilate(image_thin, np.ones((3, 3), np.uint8), iterations=1)
+	image_thin = cv2.ximgproc.thinning(image_thin)
+	#image_thin = filer_corners(image_thin)
+
+	# создание графа
+	graph, coordinates = skan.csr.skeleton_to_csgraph(image_thin)
+	from .line_extractor import LineExtractor
+	# line_nodes = LineExtractor(graph).extruct()
+	# with open('arrays.pkl', 'wb') as f:
+	# 	pickle.dump(line_nodes, f)
+	with open('arrays.pkl', 'rb') as f:
+		line_nodes = pickle.load(f)
+	lines = LineExtractor.convert_nodes_to_coordinates(line_nodes, coordinates)
+	shpline_save(save_folder, lines)
+	return lines
+
