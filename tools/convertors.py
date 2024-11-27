@@ -6,17 +6,24 @@ import rasterio
 from rasterio.merge import merge
 
 
-def geotif2geotif_standart(input_path: Path, output_folder: Path):
+def geotif2geotif_standart(input_path: Path, output_path: Path):
 	with rasterio.open(input_path) as tif:
 		meta = tif.meta.copy()
 		image = tif.read([1, 2, 3]).astype(np.uint8)
+
 		meta.update({
 			"dtype": rasterio.uint8,
 			'count': 3
 		})
 
+		if output_path.is_dir():
+			output_folder = output_path
+			name = input_path.stem
+		else:
+			output_folder = output_path.parent
+			name = output_path.name
 		with rasterio.open(
-			output_folder / f"{input_path.stem}.tif",
+			output_folder / f"{name}",
 			'w',
 			**meta
 		) as dst:
@@ -30,12 +37,6 @@ def put_labels(geo_mosaic, geo_parts, geo_paths):
 	np_mosaic = np.ascontiguousarray(np_mosaic)
 
 	bounds = geo_mosaic.bounds
-	dx = (bounds.right - bounds.left)
-	dy = (bounds.top - bounds.bottom)
-	#print(np_mosaic.shape)
-	#print(dx / 0.0005)
-	#print(dy / 0.0005)
-
 	for part, path in zip(geo_parts, geo_paths):
 		bb = part.bounds
 		center_x = (bb.left + bb.right) / 2 - bounds.left
@@ -69,4 +70,5 @@ def mosaic_merge(images_folder: Path, save_path='mosaic.tif', labels=False):
 	})
 	with rasterio.open(save_path, 'w+', **out_meta) as geo_mosaic:
 		geo_mosaic.write(mosaic)
-		put_labels(geo_mosaic, geo_images, path_images)
+		if labels:
+			put_labels(geo_mosaic, geo_images, path_images)

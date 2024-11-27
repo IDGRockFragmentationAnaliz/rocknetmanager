@@ -92,11 +92,11 @@ def vectorize(image_thin, save_folder: Path):
 	# создание графа
 	graph, coordinates = skan.csr.skeleton_to_csgraph(image_thin)
 	from .line_extractor import LineExtractor
-	# line_nodes = LineExtractor(graph).extruct()
+	line_nodes = LineExtractor(graph).extruct()
 	# with open('arrays.pkl', 'wb') as f:
 	# 	pickle.dump(line_nodes, f)
-	with open('arrays.pkl', 'rb') as f:
-		line_nodes = pickle.load(f)
+	# with open('arrays.pkl', 'rb') as f:
+	# 	line_nodes = pickle.load(f)
 	lines = LineExtractor.convert_nodes_to_coordinates(line_nodes, coordinates)
 	shpline_save(save_folder, lines)
 	return lines
