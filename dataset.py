@@ -1,4 +1,5 @@
 import cv2
+from PIL import Image
 from pathlib import Path
 
 import numpy as np
@@ -13,11 +14,6 @@ _normalize = transforms.Normalize(
 _transform = transforms.Compose(
 	[transforms.ToTensor(), _normalize]
 )
-
-
-
-def _ndarray_to_pidinet(ndarray_image):
-	return _transform(ndarray_image).unsqueeze(0).cuda()
 
 
 class Dataset(data.Dataset):
@@ -38,17 +34,20 @@ class Dataset(data.Dataset):
 		return self.len
 
 	def __getitem__(self, index):
-		input_image = cv2.imread(str(self.path_root / self.inputs_paths[index]))
-		input_image = cv2.cvtColor(input_image, cv2.COLOR_BGR2RGB)
-		label = cv2.imread(str(self.path_root / self.outputs_paths[index]))
-		label = label.astype(np.float32)
+		# Упрощенное чтение с использованием PIL
+		input_image = Image.open(str(self.path_root / self.inputs_paths[index])).convert('RGB')
+		label = Image.open(str(self.path_root / self.outputs_paths[index]))
+
+		label = np.array(label, dtype=np.float32)
 		if label.ndim == 3:
 			label = np.squeeze(label[:, :, 0])
 		assert label.ndim == 2
+
 		threshold = 0.5
 		label = label[np.newaxis, :, :]
 		label[label == 0] = 0
 		label[np.logical_and(label > 0, label < threshold)] = 2
 		label[label >= threshold] = 1
+
 		input_image = _transform(input_image)
 		return input_image, label
