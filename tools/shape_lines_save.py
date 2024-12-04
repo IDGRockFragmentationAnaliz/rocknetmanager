@@ -7,8 +7,12 @@ import shapefile
 
 
 def shape_line_save(path: Path, polylines):
-	path.mkdir(parents=False, exist_ok=True)
-	with shapefile.Writer(path / (path.stem + ".shp"), shapefile.POLYLINE) as shp:
+	if path.is_dir():
+		path.mkdir(parents=False, exist_ok=True)
+		path = path / (path.stem + ".shp")
+	else:
+		path.parent.mkdir(parents=False, exist_ok=True)
+	with shapefile.Writer(path, shapefile.POLYLINE) as shp:
 		shp.field("NAME", "C")
 		for polyline in polylines:
 			shp.line([(polyline * [1, -1]).tolist()])
