@@ -16,6 +16,7 @@ from tqdm import tqdm
 from .utils import cross_entropy_loss_RCF
 from .dataset import Dataset
 from .utils import save_checkpoint
+from time import time
 
 
 class ModelTrain:
@@ -33,6 +34,13 @@ class ModelTrain:
 		self.epoch = 100
 		self.progress = tqdm(total=len(self.train_loader))
 		self.counter = 0
+		self.last_time = time()
+
+	def tick(self, mas):
+		_time = time()
+		dtime = _time - self.last_time
+		self.last_time = _time
+		print(mas, dtime)
 
 	@staticmethod
 	def cross_entropy_loss(prediction, labelf, beta):
@@ -49,25 +57,25 @@ class ModelTrain:
 		return cost
 
 	def train_instance(self, image, label):
-		print("1")
+		self.tick("1")
 		outputs = self.model(image)
-		print("2")
+		self.tick("2")
 		loss = 0
 		if isinstance(outputs, list):
 			for output in outputs:
 				loss = loss + self.cross_entropy_loss(output, label, 1.1)
-		print("3")
+		self.tick("3")
 		self.counter = self.counter + 1
 		loss = loss / self.grad_com_size
-		print("4")
+		self.tick("4")
 		loss.backward()
-		print("5")
+		self.tick("5")
 		if self.counter == self.grad_com_size:
 			self.optimizer.step()
 			self.optimizer.zero_grad()
 			self.counter = 0
-		self.progress.update(1)
-		print("6")
+		#self.progress.update(1)
+		self.tick("6")
 
 	def train(self):
 		print("train start")
