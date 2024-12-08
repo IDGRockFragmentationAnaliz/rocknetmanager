@@ -68,35 +68,6 @@ def load_checkpoint(args, running_file):
 
     return state
 
-
-def save_checkpoint(state, epoch, root):
-
-    filename = 'checkpoint_%03d.pth' % epoch
-    model_dir = os.path.join(root, 'save_models')
-    model_filename = os.path.join(model_dir, filename)
-    latest_filename = os.path.join(model_dir, 'latest.txt')
-
-    if not os.path.exists(model_dir):
-        os.makedirs(model_dir)
-
-    # write new checkpoint 
-    torch.save(state, model_filename)
-    with open(latest_filename, 'w') as fout:
-        fout.write(model_filename)
-    print("=> saved checkpoint '{}'".format(model_filename))
-
-    # remove old model
-    # if saveID is not None and (saveID + 1) % keep_freq != 0:
-    #     filename = 'checkpoint_%03d.pth' % saveID
-    #     model_filename = os.path.join(model_dir, filename)
-    #     if os.path.exists(model_filename):
-    #         os.remove(model_filename)
-    #         print('=> removed checkpoint %s' % model_filename)
-
-    print('##########Time##########', time.strftime('%Y-%m-%d %H:%M:%S'))
-    return epoch
-
-
 class AverageMeter(object):
     """Computes and stores the average and current value"""
     def __init__(self):
