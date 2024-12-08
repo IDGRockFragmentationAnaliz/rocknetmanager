@@ -32,9 +32,9 @@ class ModelTrain:
 		self.model = model
 		self.optimizer = optimizer
 		self.epoch = 100
-		self.progress = tqdm(total=len(self.train_loader))
 		self.counter = 0
 		self.last_time = time()
+		self.progress = None
 
 	def tick(self, mas):
 		_time = time()
@@ -76,11 +76,11 @@ class ModelTrain:
 		self.model.train()
 		self.optimizer.zero_grad()
 
-		self.progress.n = 0
-		#self.progress.refresh()
-
+		self.progress = tqdm(total=len(self.train_loader))
 		self.counter = 0
 		for i, (image, label) in enumerate(self.train_loader):
 			image = image.cuda(non_blocking=True)
 			label = label.cuda(non_blocking=True)
 			self.train_instance(image, label)
+		self.progress.clear()
+		self.progress = None
