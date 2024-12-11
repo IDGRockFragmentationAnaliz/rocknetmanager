@@ -1,11 +1,9 @@
 import cv2
 import numpy as np
-import sknw
 from pathlib import Path
 from shapely.geometry import LineString
 import shapefile
 from skimage import morphology
-import networkx as nx
 import skan
 import scipy
 import tqdm
