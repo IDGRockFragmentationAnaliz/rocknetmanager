@@ -67,15 +67,33 @@ class ImageData:
 
 	@classmethod
 	def load(cls, image_folder):
-		path_image = (image_folder / image_folder.name).with_suffix(".png")
+		# Поддерживаемые расширения изображений
+		supported_extensions = ['.png', '.jpg', '.jpeg']
+
+		# Ищем файл с нужным именем и поддерживаемым расширением
+		image_path = None
+		for ext in supported_extensions:
+			potential_path = (image_folder / image_folder.name).with_suffix(ext)
+			if potential_path.exists():
+				image_path = potential_path
+				break
+
+		if image_path is None:
+			raise FileNotFoundError(
+				f"No image file found with supported extensions {supported_extensions} in {image_folder}")
+
 		path_areas = (image_folder / "areas")
 		path_traces = (image_folder / "traces")
-		#
-		image = cv2.imread(str(path_image))
+
+		# Чтение изображения
+		image = cv2.imread(str(image_path))
+		if image is None:
+			raise ValueError(f"Failed to read image from {image_path}")
 		image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
 		lines, bbox = shape_load(path_traces)
 		polies, bbox = shape_load(path_areas)
-		#
+
 		return cls.from_vectors(image, poly_areas=polies, line_edges=lines), bbox
 
 	@staticmethod
