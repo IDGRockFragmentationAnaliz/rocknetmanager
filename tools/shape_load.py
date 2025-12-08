@@ -14,9 +14,9 @@ def shape_load(path: Path, factor=1, shift=np.zeros((1, 2))):
 		shapes = shp.shapes()
 		bbox = np.array(shp.bbox, np.float64)
 		_bbox = bbox.copy()
-		_bbox[0] = (bbox[0] + shift[0, 0]) * factor
-		_bbox[1] = (-bbox[3] + shift[0, 1]) * factor
-		_bbox[3] = (-bbox[1] + shift[0, 1]) * factor
+		# _bbox[0] = (bbox[0] + shift[0, 0]) * factor
+		# _bbox[1] = (-bbox[3] + shift[0, 1]) * factor
+		# _bbox[3] = (-bbox[1] + shift[0, 1]) * factor
 		bbox = _bbox.astype(np.int32)
 		lines = []
 		for shape in shapes:
