@@ -19,6 +19,9 @@ class ImageData:
         return self.__class__(image, label, area)
 
     def is_in_bound(self, percent=0.4):
+        if self.area is None or self.area.size == 0:
+            return False
+
         area = self.area[:, :, 0]
         bound_area = np.prod(area.shape)
         count = cv2.countNonZero(area)
@@ -67,11 +70,27 @@ class ImageData:
 
     @classmethod
     def load(cls, image_folder):
-        path_image = (image_folder / image_folder.name).with_suffix(".png")
+        path_image = None
+        exts = [".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff"]
+        for ext in exts:
+            candidate = (image_folder / image_folder.name).with_suffix(ext)
+            if candidate.exists():
+                path_image = candidate
+                break
+
+        if path_image is None:
+            raise FileNotFoundError(
+                f"Не найден файл изображения для папки {image_folder}. "
+                f"Ожидался один из форматов: {', '.join(exts)}"
+            )
+
         path_areas = (image_folder / "areas")
         path_traces = (image_folder / "traces")
         #
         image = cv2.imread(str(path_image))
+        if image is None:
+            raise ValueError(f"OpenCV не смог прочитать изображение: {path_image}")
+
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         lines, bbox = shape_load(path_traces)
         polies, bbox = shape_load(path_areas)
