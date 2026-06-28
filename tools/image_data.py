@@ -93,6 +93,10 @@ class ImageData:
 
         return cls(image, label, mask)
 
+    @staticmethod
+    def crop(image, x, y, dx, dy):
+        return image[y:y + dy, x:x + dx]
+
     @classmethod
     def load(cls, path_image, path_labels, path_mask=None):
         path_image = Path(path_image)
@@ -105,10 +109,10 @@ class ImageData:
             raise FileNotFoundError(f"Не найден файл изображения: {path_image}")
 
         if not path_labels.exists():
-            raise FileNotFoundError(f"Не найден файл векторов трасс: {path_labels}")
+            raise FileNotFoundError(f"Не найден файл label: {path_labels}")
 
         if path_mask is not None and not path_mask.exists():
-            raise FileNotFoundError(f"Не найден файл векторов маски: {path_mask}")
+            raise FileNotFoundError(f"Не найден файл mask: {path_mask}")
 
         image = cv2.imread(str(path_image))
         if image is None:
@@ -116,24 +120,173 @@ class ImageData:
 
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-        polies_label, bbox_labels = shape_load(path_labels)
+        label, bbox_labels = cls.load_label(
+            path_label=path_labels,
+            image_shape=image.shape,
+        )
 
-        polies_mask = None
-        bbox_mask = None
-
-        if path_mask is not None:
-            polies_mask, bbox_mask = shape_load(path_mask)
-
-        obj = cls.from_vectors(
-            image,
-            polies_label=polies_label,
-            polies_mask=polies_mask,
+        mask, bbox_mask = cls.load_mask(
+            path_mask=path_mask,
+            image_shape=image.shape,
         )
 
         bbox = bbox_mask if bbox_mask is not None else bbox_labels
 
-        return obj, bbox
+        return cls(image, label, mask), bbox
 
     @staticmethod
-    def crop(image, x, y, dx, dy):
-        return image[y:y + dy, x:x + dx]
+    def load_label_from_vector(path_labels, image_shape, thickness=3):
+        path_labels = Path(path_labels)
+
+        if not path_labels.exists():
+            raise FileNotFoundError(f"Не найден файл векторов label: {path_labels}")
+
+        height, width = image_shape[:2]
+
+        polies_label, bbox = shape_load(path_labels)
+
+        label = np.zeros((height, width), dtype=np.uint8)
+
+        if polies_label is not None and len(polies_label) > 0:
+            label = cv2.polylines(
+                label,
+                polies_label,
+                isClosed=False,
+                color=255,
+                thickness=thickness,
+            )
+
+        return label, bbox
+
+    @staticmethod
+    def load_label(path_label, image_shape):
+        path_label = Path(path_label)
+
+        if path_label.is_dir() or path_label.suffix.lower() == ".shp":
+            return ImageData.load_label_from_vector(
+                path_labels=path_label,
+                image_shape=image_shape,
+            )
+
+        if ImageData.is_image_path(path_label):
+            label = ImageData.load_label_from_image(
+                path_label=path_label,
+                image_shape=image_shape,
+            )
+            return label, None
+
+        raise ValueError(
+            f"Неподдерживаемый формат label: {path_label}. "
+            f"Ожидалась папка, .shp или файл изображения."
+        )
+
+    @staticmethod
+    def load_mask(path_mask, image_shape):
+        if path_mask is None:
+            return None, None
+
+        path_mask = Path(path_mask)
+
+        if path_mask.is_dir() or path_mask.suffix.lower() == ".shp":
+            return ImageData.load_mask_from_vector(
+                path_mask=path_mask,
+                image_shape=image_shape,
+            )
+
+        if ImageData.is_image_path(path_mask):
+            mask = ImageData.load_mask_from_image(
+                path_mask=path_mask,
+                image_shape=image_shape,
+            )
+            return mask, None
+
+        raise ValueError(
+            f"Неподдерживаемый формат mask: {path_mask}. "
+            f"Ожидалась папка, .shp или файл изображения."
+        )
+
+
+    @staticmethod
+    def load_label_from_image(path_label, image_shape=None):
+        path_label = Path(path_label)
+
+        if not path_label.exists():
+            raise FileNotFoundError(f"Не найден файл label: {path_label}")
+
+        label = cv2.imread(str(path_label), cv2.IMREAD_GRAYSCALE)
+
+        if label is None:
+            raise ValueError(f"OpenCV не смог прочитать label: {path_label}")
+
+        if image_shape is not None:
+            height, width = image_shape[:2]
+
+            if label.shape != (height, width):
+                raise ValueError(
+                    f"Размер label не совпадает с image: "
+                    f"label={label.shape}, image={(height, width)}"
+                )
+
+        return label
+
+    @staticmethod
+    def load_mask_from_vector(path_mask, image_shape):
+        if path_mask is None:
+            return None, None
+
+        path_mask = Path(path_mask)
+
+        if not path_mask.exists():
+            raise FileNotFoundError(f"Не найден файл векторов mask: {path_mask}")
+
+        height, width = image_shape[:2]
+
+        polies_mask, bbox = shape_load(path_mask)
+
+        mask = None
+        if polies_mask is not None and len(polies_mask) > 0:
+            mask = np.zeros((height, width), dtype=np.uint8)
+            mask = cv2.fillPoly(
+                mask,
+                polies_mask,
+                color=255,
+            )
+
+        return mask, bbox
+
+    @staticmethod
+    def load_mask_from_image(path_mask, image_shape=None):
+        if path_mask is None:
+            return None
+
+        path_mask = Path(path_mask)
+
+        if not path_mask.exists():
+            raise FileNotFoundError(f"Не найден файл mask: {path_mask}")
+
+        mask = cv2.imread(str(path_mask), cv2.IMREAD_GRAYSCALE)
+
+        if mask is None:
+            raise ValueError(f"OpenCV не смог прочитать mask: {path_mask}")
+
+        if image_shape is not None:
+            height, width = image_shape[:2]
+
+            if mask.shape != (height, width):
+                raise ValueError(
+                    f"Размер mask не совпадает с image: "
+                    f"mask={mask.shape}, image={(height, width)}"
+                )
+
+        return mask
+
+    @staticmethod
+    def is_image_path(path):
+        return Path(path).suffix.lower() in {
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".bmp",
+            ".tif",
+            ".tiff",
+        }
