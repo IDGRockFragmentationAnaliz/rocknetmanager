@@ -26,9 +26,11 @@ class ModelTrain:
 		self,
 		dataset: Dataset,
 		model: nn.Module,
-		optimizer: torch.optim.Optimizer
+		optimizer: torch.optim.Optimizer,
+		num_workers = 2,
+		batch_size=1,
 	):
-		self.train_loader = DataLoader(dataset, batch_size=1, num_workers=4, shuffle=True, pin_memory=True)
+		self.train_loader = DataLoader(dataset, batch_size=batch_size, num_workers=num_workers, shuffle=True, pin_memory=True)
 		self.model = model
 		self.optimizer = optimizer
 		self.epoch = 100
