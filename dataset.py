@@ -35,7 +35,8 @@ class Dataset(data.Dataset):
 
 	def __getitem__(self, index):
 		# Упрощенное чтение с использованием PIL
-		input_image = Image.open(str(self.path_root / self.inputs_paths[index])).convert('RGB')
+		path_image = str(self.path_root / self.inputs_paths[index])
+		input_image = Image.open(path_image).convert('RGB')
 		label = Image.open(str(self.path_root / self.outputs_paths[index]))
 
 		label = np.array(label, dtype=np.float32)
