@@ -35,12 +35,12 @@ class ImageData:
 
         return count / bound_area > percent
 
-    def is_have_label(self):
+    def is_have_label(self, threshold=25):
         count = cv2.countNonZero(self.label)
-        return count > 9
+        return count > threshold
 
-    def is_accessible(self):
-        return self.is_in_bound() and self.is_have_label()
+    def is_accessible(self, threshold=25):
+        return self.is_in_bound() and self.is_have_label(threshold)
 
 
     def rotate(self):
@@ -98,7 +98,7 @@ class ImageData:
         return image[y:y + dy, x:x + dx]
 
     @classmethod
-    def load(cls, path_image, path_labels, path_mask=None):
+    def load(cls, path_image, path_labels, path_mask=None, thickness=None):
         path_image = Path(path_image)
         path_labels = Path(path_labels)
 
@@ -123,6 +123,7 @@ class ImageData:
         label, bbox_labels = cls.load_label(
             path_label=path_labels,
             image_shape=image.shape,
+            thickness=thickness
         )
 
         mask, bbox_mask = cls.load_mask(
@@ -135,7 +136,8 @@ class ImageData:
         return cls(image, label, mask), bbox
 
     @staticmethod
-    def load_label_from_vector(path_labels, image_shape, thickness=3):
+    def load_label_from_vector(path_labels, image_shape, thickness=None):
+        thickness = thickness if thickness is not None else 3
         path_labels = Path(path_labels)
 
         if not path_labels.exists():
@@ -159,13 +161,14 @@ class ImageData:
         return label, bbox
 
     @staticmethod
-    def load_label(path_label, image_shape):
+    def load_label(path_label, image_shape, thickness=None):
         path_label = Path(path_label)
 
         if path_label.is_dir() or path_label.suffix.lower() == ".shp":
             return ImageData.load_label_from_vector(
                 path_labels=path_label,
                 image_shape=image_shape,
+                thickness=thickness
             )
 
         if ImageData.is_image_path(path_label):
