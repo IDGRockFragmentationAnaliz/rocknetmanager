@@ -9,13 +9,16 @@ from ..dataset_path_list import DatasetPathList
 class ImageTiler:
     def __init__(
             self,
-            tile_resolution=(512, 512),
-            cropshift=(512, 512),
+            tile_resolution: tuple[int, int], # (512,512)
+            cropshift: tuple[int, int], # (256,256)
             lst: DatasetPathList | None = None,
             rotation: bool = False,
     ):
         crop_w, crop_h = map(int, tile_resolution)
         shift_x, shift_y = map(int, cropshift)
+
+        print("crop_w, crop_h", crop_w, crop_h)
+        print("shift_x, shift_y", shift_x, shift_y)
 
         if crop_w <= 0 or crop_h <= 0:
             raise ValueError(
@@ -36,7 +39,7 @@ class ImageTiler:
         self.lst = lst
         self.is_rotate = rotation
 
-    def run(
+    def tile_image(
             self,
             data: ImageData,
             bbox=None,
@@ -100,7 +103,7 @@ class ImageTiler:
                 path_image = path / "image" / crop_name
                 path_label = path / "label" / crop_name
 
-                crop_save(rotated_data, path_image, path_label, lst)
+                self._tile_save(rotated_data, path_image, path_label)
 
                 if self.is_rotate:
                     rotated_data = rotated_data.rotate()
@@ -127,3 +130,9 @@ class ImageTiler:
         coordinates = [(x, y) for y in list_y for x in list_x]
 
         return coordinates
+
+    def _tile_save(self, data: ImageData, path_image: Path, path_label: Path):
+        data.save(path_image=path_image, path_label=path_label)
+        path_image = path_image.relative_to(self.lst.root)
+        path_label = path_label.relative_to(self.lst.root)
+        self.lst.add(path_image, path_label)
