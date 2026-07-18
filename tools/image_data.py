@@ -68,6 +68,46 @@ class ImageData:
         if not ok_label:
             raise IOError(f"Не удалось сохранить label: {path_label}")
 
+    def resize(self, scale):
+        """
+        Масштабирует изображение, label и mask.
+
+        scale:
+            0.5 -> уменьшение в 2 раза
+            2.0 -> увеличение в 2 раза
+        """
+
+        if scale <= 0:
+            raise ValueError("scale должен быть больше 0")
+
+        height, width = self.image.shape[:2]
+
+        new_size = (
+            int(width * scale),
+            int(height * scale)
+        )
+
+        self.image = cv2.resize(
+            self.image,
+            new_size,
+            interpolation=cv2.INTER_AREA if scale < 1 else cv2.INTER_LINEAR
+        )
+
+        self.label = cv2.resize(
+            self.label,
+            new_size,
+            interpolation=cv2.INTER_NEAREST
+        )
+
+        if self.mask is not None:
+            self.mask = cv2.resize(
+                self.mask,
+                new_size,
+                interpolation=cv2.INTER_NEAREST
+            )
+
+        return self
+
     @classmethod
     def from_vectors(cls, image, polies_label, polies_mask=None):
         height, width = image.shape[:2]
