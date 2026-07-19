@@ -50,6 +50,13 @@ class ImageData:
             self.mask = cv2.rotate(self.mask, cv2.ROTATE_90_CLOCKWISE)
         return self
 
+    def flip_rl(self):
+        self.image = cv2.flip(self.image, 1)
+        self.label = cv2.flip(self.label, 1)
+        if self.mask is not None:
+            self.mask = cv2.flip(self.mask, 1)
+        return self
+
     def save(self, path_image: Path, path_label: Path):
         path_image = Path(path_image)
         path_label = Path(path_label)
