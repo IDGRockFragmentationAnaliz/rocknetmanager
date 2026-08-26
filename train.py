@@ -1,4 +1,3 @@
-import cv2
 import time
 from pathlib import Path
 import matplotlib.pyplot as plt
