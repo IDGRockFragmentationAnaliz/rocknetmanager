@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 from pathlib import Path
-from rocknetmanager.tools.shape_load import shape_load
+from .shape_load import shape_load
 
 
 class ImageData:
