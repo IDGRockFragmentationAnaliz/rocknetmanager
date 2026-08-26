@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from pathlib import Path
 
 import cv2
@@ -165,6 +166,55 @@ class Sample(dict[str, torch.Tensor]):
         return self
 
     @classmethod
+    def _load_annotation(
+        cls,
+        path: Path,
+        image_shape: tuple[int, ...],
+        field_name: str,
+        vector_loader: Callable[
+            [Path, tuple[int, ...]],
+            np.ndarray,
+        ],
+    ) -> np.ndarray:
+        """
+        Загружает разметку из растра или Shapefile.
+
+        Каталог и файл ``.shp`` считаются векторной
+        разметкой. Любой другой существующий файл
+        загружается как grayscale-изображение.
+        """
+        path = Path(path)
+
+        if path.is_dir() or path.suffix.lower() == ".shp":
+            return vector_loader(path, image_shape)
+
+        if not path.is_file():
+            raise FileNotFoundError(
+                f"Файл {field_name!r} не найден: {path}"
+            )
+
+        annotation = cv2.imread(
+            str(path),
+            cv2.IMREAD_GRAYSCALE,
+        )
+
+        if annotation is None:
+            raise ValueError(
+                f"Не удалось загрузить {field_name!r} "
+                f"как grayscale-изображение: {path}"
+            )
+
+        expected_shape = image_shape[:2]
+        if annotation.shape != expected_shape:
+            raise ValueError(
+                f"Размер {field_name!r} не совпадает "
+                f"с размером изображения: "
+                f"{annotation.shape} != {expected_shape}"
+            )
+
+        return annotation
+
+    @classmethod
     def load_sample(
         cls,
         path_sample: dict[str, Path],
@@ -185,15 +235,22 @@ class Sample(dict[str, torch.Tensor]):
             cv2.COLOR_BGR2RGB,
         )
 
-        mask = mask_load(
-            path_sample["mask"],
-            image.shape,
+        mask = cls._load_annotation(
+            path=path_sample["mask"],
+            image_shape=image.shape,
+            field_name="mask",
+            vector_loader=mask_load,
         )
 
-        label = label_load(
-            path_sample["label"],
-            image.shape,
-            thickness=thickness,
+        label = cls._load_annotation(
+            path=path_sample["label"],
+            image_shape=image.shape,
+            field_name="label",
+            vector_loader=lambda path, shape: label_load(
+                path,
+                shape,
+                thickness=thickness,
+            ),
         )
 
         if mask.ndim == 3 and mask.shape[-1] == 1:

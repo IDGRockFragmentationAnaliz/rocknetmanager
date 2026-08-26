@@ -12,12 +12,15 @@ def save_tile(
 ) -> tuple[Path, Path]:
     """
     Сохраняет image и label одного тайла.
-    """
-    image_folder = output_folder / "images"
-    label_folder = output_folder / "labels"
 
-    image_folder.mkdir(parents=False, exist_ok=True)
-    label_folder.mkdir(parents=False, exist_ok=True)
+    Файлы помещаются в ``output_folder/image``
+    и ``output_folder/label``.
+    """
+    image_folder = output_folder / "image"
+    label_folder = output_folder / "label"
+
+    image_folder.mkdir(parents=True, exist_ok=True)
+    label_folder.mkdir(parents=True, exist_ok=True)
 
     image_path = image_folder / f"{tile_name}.png"
     label_path = label_folder / f"{tile_name}.png"
