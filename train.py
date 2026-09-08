@@ -45,6 +45,12 @@ class ModelTrain:
 
 	@staticmethod
 	def cross_entropy_loss(prediction, labelf, beta):
+		# Remove ignored targets before BCE (which only accepts targets in [0, 1]).
+		valid = labelf != 2
+		prediction = prediction[valid]
+		labelf = labelf[valid]
+		if labelf.numel() == 0:
+			return prediction.sum()
 		label = labelf.long()
 		mask = labelf.clone()
 		num_positive = torch.sum(label == 1).float()
@@ -58,6 +64,10 @@ class ModelTrain:
 		return cost
 
 	def train_instance(self, image, label):
+		# Avoid optimizer momentum/weight decay updates for fully ignored batches.
+		if not torch.any(label != 2):
+			self.progress.update(1)
+			return
 		outputs = self.model(image)
 		loss = 0
 		if isinstance(outputs, list):

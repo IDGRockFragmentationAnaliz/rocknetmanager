@@ -37,6 +37,7 @@ class Dataset(data.Dataset):
 		# Упрощенное чтение с использованием PIL
 		path_image = str(self.path_root / self.inputs_paths[index])
 		input_image = Image.open(path_image).convert('RGB')
+		black_pixels = np.all(np.asarray(input_image) == 0, axis=-1)
 		label = Image.open(str(self.path_root / self.outputs_paths[index]))
 
 		label = np.array(label, dtype=np.float32)
@@ -49,6 +50,8 @@ class Dataset(data.Dataset):
 		label[label == 0] = 0
 		label[np.logical_and(label > 0, label < threshold)] = 2
 		label[label >= threshold] = 1
+		# Ignore exact black pixels in the original RGB image, before normalization.
+		label[0, black_pixels] = 2
 
 		input_image = _transform(input_image)
 		return input_image, label
