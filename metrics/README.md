@@ -1,3 +1,38 @@
+# Panoptic Quality
+
+```python
+from rocknetmanager.metrics import panoptic_quality
+
+pq = panoptic_quality(pred=prediction, gt=ground_truth)
+```
+
+Входы — двумерные бинарные скелеты `np.uint8` одинакового размера:
+`0` — фон, `1` или `255` — граница. Функция возвращает `float` от 0 до 1
+и не изменяет входы.
+
+Объекты — замкнутые 4-связные области внутри 8-связных границ.
+Сами линии и области, достигающие края изображения, исключаются.
+Пары объектов сопоставляются при `IoU > 0.5`:
+`PQ = sum(IoU) / (TP + 0.5 * FP + 0.5 * FN)`.
+Все объекты относятся к одному классу. Если объектов нет на обеих картах,
+результат равен `1.0`; если только на одной — `0.0`.
+Определение метрики: [Panoptic Segmentation, CVPR 2019](https://openaccess.thecvf.com/content_CVPR_2019/html/Kirillov_Panoptic_Segmentation_CVPR_2019_paper.html).
+
+Перед PQ исключённые маской пиксели нужно закрасить белым на обеих картах:
+
+```python
+prediction = prediction.copy()
+ground_truth = ground_truth.copy()
+prediction[image_mask == 0] = 255
+ground_truth[image_mask == 0] = 255
+pq = panoptic_quality(prediction, ground_truth)
+```
+
+В проекте это выполняется при запуске
+`python -m scripts_pipeline.task4_validate_pq` из корня проекта.
+Настройки модели и данных берутся из `scripts_pipeline/task4_validate.py`.
+Выводится PQ каждого изображения и среднее по изображениям.
+
 # Boundary F-score
 
 `boundary_f_score` сравнивает две однопиксельные карты линий с допустимым отклонением в несколько пикселей.
